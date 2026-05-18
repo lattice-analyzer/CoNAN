@@ -220,6 +220,7 @@ class PathEvaluator:
             if typ == "complex":
 
                 dim_val *= 2
+                var_val = var_val/2.
 
                 has_complex = True
 

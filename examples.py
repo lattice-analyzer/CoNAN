@@ -191,6 +191,7 @@ def mul_BQTRU(f, g, h, n):
                             else:
                                 h[(i2^j2)*N*N+((i1+j1)%N)*N+(i0+j0)%N] += f[i2*N*N+i1*N+i0]*g[j2*N*N+j1*N+j0]
                                 
+
                                 
 ## General quaternion Given in CiC (modify it)                               
 def mul_DiTRUplus_strong(f, g, h, n):
@@ -247,4 +248,16 @@ def mul_LWE_DCC_semi_direct(f, g, h, n):
             idx = get_index_in_G(G, mul[0]) + mul[1]*int(N/2)
 
             h[idx] += f[i] * g[j]
+            
+            
+            
+def mul_2RLWE(f, g, h, n):
+    # f[i * n + k] represents the coefficient of (y^i * x^k)
+    N = int(np.sqrt(n))
+    for i in range(N):              # y-degree of f
+        for j in range(N):          # y-degree of g
+            for k in range(N):          # x-degree of f_i(x)
+                for l in range(N):      # x-degree of g_j(x)
+                    t = ((-1)**((i+j)//N + (k+l)//N))
+                    h[((i+j)%N)*N + (k+l)%N] +=  t* f[i*N + k] * g[j*N + l]
 

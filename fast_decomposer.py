@@ -225,16 +225,19 @@ class CommutantAnalyzer:
     # Scale helper
     ########################################################################
 
+   
+
     @staticmethod
     def scale_up(v):
 
-        a = sp.lcm([term.q for term in v])
+        a = sp.lcm([sp.denom(term) for term in v])
 
-        v = a * v
+        v = sp.expand(a * v)
 
-        a = sp.gcd([term.p for term in v])
+        a = sp.gcd([sp.numer(term) for term in v])
 
-        v = v / a
+        if a != 0:
+            v = sp.expand(v / a)
 
         return v
 
@@ -751,7 +754,7 @@ class SymbolicDecomposer:
         self,
         verbose=True
     ):
-
+#         print("inside the function")
         symbolic_blocks = (
             self.get_symbolic_matrices()
         )
@@ -759,6 +762,7 @@ class SymbolicDecomposer:
         full_tree_list = []
 
         for M in symbolic_blocks:
+            print(M)
 
             blockdim = int(
                 self.n / M.shape[0]
