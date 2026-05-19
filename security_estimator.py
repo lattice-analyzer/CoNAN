@@ -2,6 +2,7 @@ import itertools
 import sympy as sp
 
 import compiler
+from compiler import AlgebraCompiler
 
 import fast_decomposer as fastdec
 import deep_decomposer as deepdec
@@ -253,8 +254,12 @@ class PathEvaluator:
                 Xs=Xs,
                 Xe=Xe
             )
-
-            result = beta_func[1](l)
+           
+            try:
+                result = beta_func[1](l)
+            except Exception:
+                result = {}
+                result['beta'] = 2
 
             beta = result['beta']
             
@@ -361,7 +366,9 @@ class SecurityEstimator:
         lattice="NTRU",
         mul_type="LL",
         filename="examples.py",
-        variable='h'
+        variable='h',
+        parameters=None,
+        symbolic = True  ######## default is symbolic = True for this level decomposer
     ):
 
         self.n = n
@@ -378,20 +385,40 @@ class SecurityEstimator:
 
         self.filename = filename
         self.variable = variable
+        self.parameters = parameters
+        self.compilerobj = None
+        self.symbolic = symbolic
 
     ########################################################################
     # Construct symbolic matrix
     ########################################################################
 
     def construct_symbolic_matrix(self):
+     
 
-        return compiler.construct_symbolic_matrix(
-            filename=self.filename,
-            funcname=self.mul_function,
-            dimension=self.n,
-            mul_type=self.mul_type,
-            variable=self.variable
+        # return compiler.construct_symbolic_matrix(
+        #     filename=self.filename,
+        #     funcname=self.mul_function,
+        #     dimension=self.n,
+        #     parameters=self.parameters,
+        #     mul_type=self.mul_type,
+        #     variable=self.variable
+        # )
+
+        compilerobj = AlgebraCompiler(
+            filename   = self.filename,
+            funcname   = self.mul_function,
+            dimension  = self.n,
+            parameters = self.parameters
         )
+
+        compilerobj.extract_structure_tensor()
+        self.compilerobj = compilerobj
+        return compilerobj.return_symbolic_matrix(
+            self.mul_type,
+            self.variable
+        )
+
 
     ########################################################################
     # Select decomposer
@@ -402,14 +429,25 @@ class SecurityEstimator:
         match self.level:
 
             case 1:
-
-                return fastdec.SymbolicDecomposer(
-                    symbolic_matrix=H,
-                    n=self.n,
-                    q=self.q,
-                    base_var=self.base_var
-                )
-
+                if self.symbolic == True:
+                    
+                    return fastdec.SymbolicDecomposer(
+                        symbolic_matrix=H,
+                        n=self.n,
+                        q=self.q,
+                        base_var=self.base_var
+                    )
+                else:
+                    
+                    return fastdec.NonSymbolicDecomposer(
+                        symbolic_matrix=H,
+                        n=self.n,
+                        q=self.q,
+                        base_var=self.base_var,
+                        compilerobj=self.compilerobj  #####get the compilrobj will be used to compute the commutant.
+                    )
+                    
+    
             case 2:
 
                 return deepdec.PrimaryDecomposer(

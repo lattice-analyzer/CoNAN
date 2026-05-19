@@ -26,17 +26,53 @@ class AlgebraCompiler:
         e_i e_j = sum_k P[i][j][k] e_k
 
     with respect to the canonical basis.
+
+    The compiler supports arbitrary additional algebra parameters.
+
+    Example:
+        mul(f, g, h, n, m, p)
+
+    by passing:
+
+        parameters = {
+            "n": ...,
+            "m": ...,
+            "p": ...
+        }
     """
 
     ####################################################################
     # Initialization
     ####################################################################
 
-    def __init__(self, filename, funcname, dimension):
+    def __init__(
+        self,
+        filename,
+        funcname,
+        dimension,
+        parameters=None
+    ):
 
         self.filename = filename
         self.funcname = funcname
-        self.n = dimension
+
+        ################################################################
+        # Tensor dimension
+        ################################################################
+
+        self.dimension = dimension
+
+        ################################################################
+        # Algebra parameters
+        ################################################################
+
+        if parameters is None:
+
+            parameters = {
+                "n": dimension
+            }
+
+        self.parameters = parameters
 
         self.source_code = None
         self.modified_code = None
@@ -67,8 +103,10 @@ class AlgebraCompiler:
         ]
 
         if len(nodes) != 1:
+
             raise ValueError(
-                f"Function '{self.funcname}' not found uniquely."
+                f"Function '{self.funcname}' "
+                f"not found uniquely."
             )
 
         return nodes[0]
@@ -96,9 +134,29 @@ class AlgebraCompiler:
 
         lines = source_code.strip().split('\n')
 
+        ################################################################
+        # Additional parameters
+        ################################################################
+
+        parameter_string = ", ".join(
+            self.parameters.keys()
+        )
+
+        if parameter_string != "":
+            parameter_string = ", " + parameter_string
+
+        ################################################################
+        # Modified function header
+        ################################################################
+
         newlines = [
-            f'def {self.funcname}_modified(f, g, h, n):'
+            f'def {self.funcname}_modified('
+            f'f, g, h{parameter_string}):'
         ]
+
+        ################################################################
+        # Bilinear update pattern
+        ################################################################
 
         pattern = re.compile(
             r'([ \t]*)(h)([ \t]*)(\[.*?\])([ \t]*)'
@@ -108,12 +166,18 @@ class AlgebraCompiler:
             r'(\*)([ \t]*)(g)([ \t]*)(\[.*?\])'
         )
 
+        ################################################################
+        # Rewrite updates
+        ################################################################
+
         for line in lines[1:]:
 
             match = pattern.fullmatch(line)
 
             if match is None:
+
                 newlines.append(line)
+
                 continue
 
             d = {
@@ -173,8 +237,8 @@ class AlgebraCompiler:
         # Dummy vectors
         ################################################################
 
-        f = [1] * self.n
-        g = [1] * self.n
+        f = [1] * self.dimension
+        g = [1] * self.dimension
 
         ################################################################
         # Structure tensor allocation
@@ -182,17 +246,22 @@ class AlgebraCompiler:
 
         P = [
             [
-                [0 for _ in range(self.n)]
-                for _ in range(self.n)
+                [0 for _ in range(self.dimension)]
+                for _ in range(self.dimension)
             ]
-            for _ in range(self.n)
+            for _ in range(self.dimension)
         ]
 
         ################################################################
-        # Single execution recovers the full tensor
+        # Single execution recovers full tensor
         ################################################################
 
-        mul_extracted(f, g, P, self.n)
+        mul_extracted(
+            f,
+            g,
+            P,
+            **self.parameters
+        )
 
         self.structure_tensor = P
 
@@ -205,12 +274,14 @@ class AlgebraCompiler:
     def verify_associativity(self):
 
         if self.structure_tensor is None:
+
             raise ValueError(
                 "Structure tensor has not been extracted."
             )
 
         P = self.structure_tensor
-        n = self.n
+
+        n = self.dimension
 
         for i in range(n):
             for j in range(n):
@@ -242,9 +313,11 @@ class AlgebraCompiler:
             self.extract_structure_tensor()
 
         P = self.structure_tensor
-        n = self.n
+
+        n = self.dimension
 
         if mul_type == 'LL':
+
             return [
                 sp.Matrix([
                     [P[i][k][j] for j in range(n)]
@@ -254,6 +327,7 @@ class AlgebraCompiler:
             ]
 
         if mul_type == 'LR':
+
             return [
                 sp.Matrix([
                     [P[j][k][i] for j in range(n)]
@@ -263,6 +337,7 @@ class AlgebraCompiler:
             ]
 
         if mul_type == 'RL':
+
             return [
                 sp.Matrix([
                     [P[k][i][j] for j in range(n)]
@@ -272,6 +347,7 @@ class AlgebraCompiler:
             ]
 
         if mul_type == 'RR':
+
             return [
                 sp.Matrix([
                     [P[k][j][i] for j in range(n)]
@@ -295,12 +371,15 @@ class AlgebraCompiler:
         L = self.return_lattice(mul_type)
 
         h = sp.Matrix(
-            sp.symbols(f'{variable}0:{self.n}')
+            sp.symbols(
+                f'{variable}0:{self.dimension}'
+            )
         )
 
-        H = sp.zeros(self.n)
+        H = sp.zeros(self.dimension)
 
-        for k in range(self.n):
+        for k in range(self.dimension):
+
             H += h[k] * L[k]
 
         return H
@@ -308,26 +387,6 @@ class AlgebraCompiler:
     ####################################################################
     # Pretty Printing
     ####################################################################
-
-    def print_lattice_basis(
-        self,
-        mul_type='LL',
-        name='M',
-        variable='h'
-    ):
-
-        L = self.return_lattice(mul_type)
-
-        print(
-            f'Basis matrices for '
-            f'{name}({variable})'
-        )
-
-        for k in range(self.n):
-
-            print(f'\n{name}_{k} =')
-
-            sp.pprint(L[k])
 
     def print_symbolic_matrix(
         self,
@@ -351,7 +410,8 @@ class AlgebraCompiler:
     def compile(self):
 
         return {
-            "dimension": self.n,
+            "dimension": self.dimension,
+            "parameters": self.parameters,
             "function": self.funcname,
             "tensor": self.extract_structure_tensor(),
             "associative": self.verify_associativity()
@@ -365,13 +425,15 @@ class AlgebraCompiler:
 def extract_structure_tensor(
     filename,
     funcname,
-    dimension
+    dimension,
+    parameters=None
 ):
 
     compiler = AlgebraCompiler(
-        filename,
-        funcname,
-        dimension
+        filename=filename,
+        funcname=funcname,
+        dimension=dimension,
+        parameters=parameters
     )
 
     return compiler.extract_structure_tensor()
@@ -381,13 +443,15 @@ def construct_lattice(
     filename,
     funcname,
     dimension,
+    parameters=None,
     mul_type='LL'
 ):
 
     compiler = AlgebraCompiler(
-        filename,
-        funcname,
-        dimension
+        filename=filename,
+        funcname=funcname,
+        dimension=dimension,
+        parameters=parameters
     )
 
     compiler.extract_structure_tensor()
@@ -399,14 +463,16 @@ def construct_symbolic_matrix(
     filename,
     funcname,
     dimension,
+    parameters=None,
     mul_type='LL',
     variable='h'
 ):
 
     compiler = AlgebraCompiler(
-        filename,
-        funcname,
-        dimension
+        filename=filename,
+        funcname=funcname,
+        dimension=dimension,
+        parameters=parameters
     )
 
     compiler.extract_structure_tensor()
@@ -415,3 +481,26 @@ def construct_symbolic_matrix(
         mul_type,
         variable
     )
+    
+    
+###### call this function to build the commutant.    
+def return_lattice(
+    filename,
+    funcname,
+    dimension,
+    parameters=None,
+    mul_type='LL',
+    variable='h'
+):
+
+    compiler = AlgebraCompiler(
+        filename=filename,
+        funcname=funcname,
+        dimension=dimension,
+        parameters=parameters
+    )
+
+    compiler.extract_structure_tensor()
+
+    return compiler.return_lattice(mul_type)
+    
