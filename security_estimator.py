@@ -11,9 +11,7 @@ from LWE_estimator import estimator
 from math import sqrt
 
 
-############################################################################
-# Matrix Utilities
-############################################################################
+
 
 class MatrixUtilities:
 
@@ -34,9 +32,7 @@ class MatrixUtilities:
         return "integer"
 
 
-############################################################################
-# Path Extraction
-############################################################################
+
 
 class PathExtractor:
 
@@ -58,9 +54,7 @@ class PathExtractor:
                     node["matrix_examples"]
                 )
 
-            ################################################################
-            # Leaf
-            ################################################################
+    
 
             if not node["children"]:
 
@@ -80,9 +74,7 @@ class PathExtractor:
                     matrix_info
                 )]]
 
-            ################################################################
-            # Solve current node directly
-            ################################################################
+          
 
             all_paths = [[(
                 node["dim"],
@@ -100,9 +92,7 @@ class PathExtractor:
                 matrix_info
             )]]
 
-            ################################################################
-            # Combine recursively
-            ################################################################
+        
 
             child_paths_lists = [
 
@@ -154,15 +144,11 @@ class PathExtractor:
         return recurse(tree)
 
 
-############################################################################
-# Path Evaluation
-############################################################################
+
 
 class PathEvaluator:
 
-    ########################################################################
-    # Evaluate symbolic expressions
-    ########################################################################
+
 
     @staticmethod
     def eval_symbolic(expr, n_value):
@@ -176,10 +162,7 @@ class PathEvaluator:
             sp.sympify(expr).subs(n, n_value)
         )
 
-    ########################################################################
-    # Evaluate one path
-    ########################################################################
-
+  
     @staticmethod
     def evaluate_path_beta(
         path,
@@ -214,9 +197,7 @@ class PathEvaluator:
                 )
             )
 
-            ################################################################
-            # Complex entries double dimension
-            ################################################################
+
 
             if typ == "complex":
 
@@ -232,9 +213,7 @@ class PathEvaluator:
                     f" {dim_val}, {q}, {var_val}"
                 )
 
-            ################################################################
-            # Gaussian distributions
-            ################################################################
+    
 
             Xs = estimator.ND.DiscreteGaussian(
                 sqrt(var_val)
@@ -244,9 +223,7 @@ class PathEvaluator:
                 sqrt(var_val)
             )
 
-            ################################################################
-            # Lattice estimator
-            ################################################################
+
 
             l = beta_func[0](
                 n=dim_val,
@@ -283,9 +260,7 @@ class PathEvaluator:
             "critical_node": critical_idx
         }
 
-    ########################################################################
-    # Best path for one tree
-    ########################################################################
+
 
     @staticmethod
     def best_beta_for_tree(
@@ -318,9 +293,7 @@ class PathEvaluator:
         if not evaluated:
             return None
 
-        ####################################################################
-        # Prefer complex on equal beta
-        ####################################################################
+
 
         best_overall = min(
             evaluated,
@@ -350,9 +323,7 @@ class PathEvaluator:
         }
 
 
-############################################################################
 # Main Security Estimator
-############################################################################
 
 class SecurityEstimator:
 
@@ -389,9 +360,7 @@ class SecurityEstimator:
         self.compilerobj = None
         self.symbolic = symbolic
 
-    ########################################################################
-    # Construct symbolic matrix
-    ########################################################################
+
 
     def construct_symbolic_matrix(self):
      
@@ -420,33 +389,21 @@ class SecurityEstimator:
         )
 
 
-    ########################################################################
+   
     # Select decomposer
-    ########################################################################
-
     def get_decomposer(self, H):
 
         match self.level:
 
             case 1:
-                if self.symbolic == True:
-                    
-                    return fastdec.SymbolicDecomposer(
-                        symbolic_matrix=H,
-                        n=self.n,
-                        q=self.q,
-                        base_var=self.base_var
-                    )
-                else:
-                    
-                    return fastdec.NonSymbolicDecomposer(
-                        symbolic_matrix=H,
-                        n=self.n,
-                        q=self.q,
-                        base_var=self.base_var,
-                        compilerobj=self.compilerobj  #####get the compilrobj will be used to compute the commutant.
-                    )
-                    
+                 
+                return fastdec.SymbolicDecomposer(
+                    symbolic_matrix=H,
+                    n=self.n,
+                    q=self.q,
+                    base_var=self.base_var
+                )
+                
     
             case 2:
 
@@ -454,7 +411,10 @@ class SecurityEstimator:
                     symbolic_matrix=H,
                     n=self.n,
                     q=self.q,
-                    base_var=self.base_var
+                    base_var=self.base_var,
+                    compilerobj = self.compiler.obj,  ##compilerobj and mul_type are used in getting basis and commutant easily 
+                                                      ## in the non-symbolic form
+                    mul_type = self.mul_type
                 )
 
             case 3:
@@ -463,7 +423,8 @@ class SecurityEstimator:
                     symbolic_matrix=H,
                     n=self.n,
                     q=self.q,
-                    base_var=self.base_var
+                    base_var=self.base_var,
+                    compilerobj = self.compilerobj
                 )
 
             case _:
@@ -472,10 +433,8 @@ class SecurityEstimator:
                     "Invalid decomposition level."
                 )
 
-    ########################################################################
+  
     # Select lattice estimator
-    ########################################################################
-
     def get_beta_function(self):
 
         if self.lattice == "NTRU":
@@ -496,10 +455,9 @@ class SecurityEstimator:
             f"Unknown lattice type '{self.lattice}'"
         )
 
-    ########################################################################
+    
     # Global optimization
-    ########################################################################
-
+ 
     def best_global_beta(
         self,
         generalized_trees,
@@ -536,10 +494,9 @@ class SecurityEstimator:
             if result is None:
                 continue
 
-            ################################################################
+            
             # Best overall
-            ################################################################
-
+      
             cand = result["best_overall"]
 
             if (
@@ -561,10 +518,9 @@ class SecurityEstimator:
                     "tree_index": tree_idx
                 }
 
-            ################################################################
+            
             # Best integer only
-            ################################################################
-
+       
             if result["best_integer"] is not None:
 
                 cand_int = result["best_integer"]
@@ -589,10 +545,8 @@ class SecurityEstimator:
                 global_best_integer['beta']
         }
 
-    ########################################################################
-    # Main estimation pipeline
-    ########################################################################
-
+    
+    # Main estimation 
     def estimate_security(
         self,
         verbose=True

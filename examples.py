@@ -267,9 +267,47 @@ def mul_DCC_semi_direct_type_2(f, g, h, n):
 
             h[idx] += f[i] * g[j]
             
+
             
-            
-def mul_2RLWE(f, g, h, n):
+# 2D RLWE over:
+# Z[x,y] / (x^N1 + 1, y^N2 + 1)
+
+def mul_2RLWE(f, g, h, N1, N2):
+
+    
+    for i in range(N2):          # y-degree of f
+
+        for j in range(N2):      # y-degree of g
+
+            for k in range(N1):  # x-degree of f
+
+                for l in range(N1):  # x-degree of g
+                    # Negacyclic sign
+                
+                    t = (
+                        (-1)**(
+                            ((i+j)//N2)
+                            +
+                            ((k+l)//N1)
+                        )
+                    )
+
+                    idx = (
+                        ((i+j) % N2) * N1
+                        +
+                        ((k+l) % N1)
+                    )
+
+                    h[idx] += (
+                        t
+                        *
+                        f[i*N1 + k]
+                        *
+                        g[j*N1 + l]
+                    )
+                    
+#########same n            
+def mul_2RLWE_same_n(f, g, h, n):
     # f[i * n + k] represents the coefficient of (y^i * x^k)
     N = int(np.sqrt(n))
     for i in range(N):              # y-degree of f

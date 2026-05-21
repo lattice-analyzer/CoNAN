@@ -1,1 +1,0 @@
-The estimtor in this file is by Léo Ducas and Wessel van Woerden from https://eprint.iacr.org/2021/999

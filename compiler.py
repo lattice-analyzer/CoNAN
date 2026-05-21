@@ -41,10 +41,7 @@ class AlgebraCompiler:
         }
     """
 
-    ####################################################################
     # Initialization
-    ####################################################################
-
     def __init__(
         self,
         filename,
@@ -55,16 +52,9 @@ class AlgebraCompiler:
 
         self.filename = filename
         self.funcname = funcname
-
-        ################################################################
-        # Tensor dimension
-        ################################################################
-
         self.dimension = dimension
 
-        ################################################################
-        # Algebra parameters
-        ################################################################
+
 
         if parameters is None:
 
@@ -79,9 +69,7 @@ class AlgebraCompiler:
 
         self.structure_tensor = None
 
-    ####################################################################
-    # Source Parsing
-    ####################################################################
+
 
     def load_source(self):
 
@@ -111,9 +99,7 @@ class AlgebraCompiler:
 
         return nodes[0]
 
-    ####################################################################
-    # Function Rewriting
-    ####################################################################
+
 
     def generate_modified_function(self):
         """
@@ -134,9 +120,7 @@ class AlgebraCompiler:
 
         lines = source_code.strip().split('\n')
 
-        ################################################################
-        # Additional parameters
-        ################################################################
+     
 
         parameter_string = ", ".join(
             self.parameters.keys()
@@ -145,19 +129,15 @@ class AlgebraCompiler:
         if parameter_string != "":
             parameter_string = ", " + parameter_string
 
-        ################################################################
-        # Modified function header
-        ################################################################
+   
 
         newlines = [
             f'def {self.funcname}_modified('
             f'f, g, h{parameter_string}):'
         ]
 
-        ################################################################
+      
         # Bilinear update pattern
-        ################################################################
-
         pattern = re.compile(
             r'([ \t]*)(h)([ \t]*)(\[.*?\])([ \t]*)'
             r'(\+=|-=|=|:=)([ \t]*-?[ \t]*'
@@ -166,9 +146,7 @@ class AlgebraCompiler:
             r'(\*)([ \t]*)(g)([ \t]*)(\[.*?\])'
         )
 
-        ################################################################
-        # Rewrite updates
-        ################################################################
+      
 
         for line in lines[1:]:
 
@@ -185,7 +163,7 @@ class AlgebraCompiler:
                 for i in range(1, 18)
             }
 
-            ################################################################
+            ###############################################################
             # Transform:
             #
             #     h[k] += c*f[i]*g[j]
@@ -208,9 +186,7 @@ class AlgebraCompiler:
 
         self.modified_code = '\n'.join(newlines)
 
-    ####################################################################
-    # Structure Tensor Extraction
-    ####################################################################
+
 
     def extract_structure_tensor(self):
 
@@ -233,16 +209,12 @@ class AlgebraCompiler:
             f'{self.funcname}_modified'
         ]
 
-        ################################################################
-        # Dummy vectors
-        ################################################################
+       
 
         f = [1] * self.dimension
         g = [1] * self.dimension
 
-        ################################################################
-        # Structure tensor allocation
-        ################################################################
+        
 
         P = [
             [
@@ -252,9 +224,7 @@ class AlgebraCompiler:
             for _ in range(self.dimension)
         ]
 
-        ################################################################
-        # Single execution recovers full tensor
-        ################################################################
+ 
 
         mul_extracted(
             f,
@@ -267,9 +237,8 @@ class AlgebraCompiler:
 
         return P
 
-    ####################################################################
+    
     # Associativity Verification
-    ####################################################################
 
     def verify_associativity(self):
 
@@ -303,9 +272,7 @@ class AlgebraCompiler:
 
         return True
 
-    ####################################################################
-    # Lattice Construction
-    ####################################################################
+   
 
     def return_lattice(self, mul_type='LL'):
 
@@ -358,9 +325,6 @@ class AlgebraCompiler:
 
         return None
 
-    ####################################################################
-    # Symbolic Matrix Construction
-    ####################################################################
 
     def return_symbolic_matrix(
         self,
@@ -384,9 +348,6 @@ class AlgebraCompiler:
 
         return H
 
-    ####################################################################
-    # Pretty Printing
-    ####################################################################
 
     def print_symbolic_matrix(
         self,
@@ -403,9 +364,7 @@ class AlgebraCompiler:
 
         sp.pprint(H)
 
-    ####################################################################
-    # Main Compilation Pipeline
-    ####################################################################
+
 
     def compile(self):
 
@@ -418,9 +377,8 @@ class AlgebraCompiler:
         }
 
 
-####################################################################
-# Public API
-####################################################################
+
+#  API
 
 def extract_structure_tensor(
     filename,

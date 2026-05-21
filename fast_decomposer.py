@@ -5,14 +5,14 @@ CoNAN Symbolic Decomposition (fast) Module
 These functions implement the symbolic decomposition layer of CoNAN.
 
 The module:
-    • extracts symbolic block structures,
-    • computes commutants,
-    • searches for projectors,
-    • performs recursive decomposition,
-    • and constructs decomposition trees.
+    - extracts symbolic block structures,
+    - computes commutants,
+    - searches for projectors,
+    - performs recursive decomposition,
+    - and constructs decomposition trees.
 
-The implementation is intentionally lightweight and follows the
-original prototype logic closely for fast check.
+The implementation is intentionally lightweight and 
+can caputer many of the existing homomorphisms quickly.
 """
 
 import math
@@ -21,18 +21,12 @@ from collections import deque
 import sympy as sp
 
 
-############################################################################
-# Symbolic Block Utilities
-############################################################################
+
 
 class SymbolicBlocks:
     """
     Utilities for symbolic block extraction and rewriting.
     """
-
-    ########################################################################
-    # Extract matrix blocks
-    ########################################################################
 
     @staticmethod
     def extract_blocks(M, k):
@@ -55,9 +49,7 @@ class SymbolicBlocks:
 
         return blocks, b
 
-    ########################################################################
-    # Rewrite blocks symbolically
-    ########################################################################
+
 
     @staticmethod
     def rewrite_blocks_general(
@@ -112,9 +104,7 @@ class SymbolicBlocks:
 
         return block_symbols, unique, next_symbol
 
-    ########################################################################
-    # Convert symbolic blocks into matrix
-    ########################################################################
+
 
     @staticmethod
     def block_symbol_matrix(symbols, k):
@@ -143,9 +133,7 @@ class SymbolicBlocks:
 
         return sp.Matrix(M_sym)
 
-    ########################################################################
-    # Generate symbolic matrices
-    ########################################################################
+
 
     @staticmethod
     def get_symbolic_matrices(M):
@@ -182,9 +170,6 @@ class SymbolicBlocks:
         return symbolic_blocks
 
 
-############################################################################
-# Generator Extraction
-############################################################################
 
 class GeneratorExtractor:
     """
@@ -212,21 +197,16 @@ class GeneratorExtractor:
         return gens
 
 
-############################################################################
-# Commutant Computation
-############################################################################
+
+# Commutant Computation for the symbolic form
 
 class CommutantAnalyzer:
     """
     Compute commutants and projectors.
     """
 
-    ########################################################################
+ 
     # Scale helper
-    ########################################################################
-
-   
-
     @staticmethod
     def scale_up(v):
 
@@ -241,10 +221,9 @@ class CommutantAnalyzer:
 
         return v
 
-    ########################################################################
-    # Compute commutant basis
-    ########################################################################
 
+    # Compute commutant basis [here commutant does not need to be
+    # computed as per proposition 3 ]
     @staticmethod
     def commutant_basis(gens):
 
@@ -281,9 +260,8 @@ class CommutantAnalyzer:
 
         return B
 
-    ########################################################################
+
     # Find projector
-    ########################################################################
 
     @staticmethod
     def find_projector(comm):
@@ -296,9 +274,7 @@ class CommutantAnalyzer:
 
         candidates = list(comm)
 
-        ####################################################################
         # Pairwise combinations
-        ####################################################################
 
         for i in range(len(comm)):
 
@@ -308,9 +284,7 @@ class CommutantAnalyzer:
 
                 candidates.append(comm[i] - comm[j])
 
-        ####################################################################
         # Rational decomposition
-        ####################################################################
 
         for C in candidates:
 
@@ -337,9 +311,7 @@ class CommutantAnalyzer:
                     )
                 )
 
-        ####################################################################
         # Gaussian rational fallback
-        ####################################################################
 
         for C in comm:
 
@@ -371,9 +343,7 @@ class CommutantAnalyzer:
 
         return None
 
-    ########################################################################
     # Build projector
-    ########################################################################
 
     @staticmethod
     def build_projector_from_factors(
@@ -419,9 +389,8 @@ class CommutantAnalyzer:
         return sp.simplify(P)
 
 
-############################################################################
-# Restriction Utilities
-############################################################################
+
+
 
 class RestrictionTools:
     """
@@ -435,9 +404,9 @@ class RestrictionTools:
 
         Q = sp.eye(n) - P
 
-        ####################################################################
+        
         # Basis for Im(P)
-        ####################################################################
+        
 
         colsP = P.columnspace()
 
@@ -448,9 +417,9 @@ class RestrictionTools:
 
         B1 = sp.Matrix.hstack(*B1.columnspace())
 
-        ####################################################################
+      
         # Basis for Im(I-P)
-        ####################################################################
+        
 
         colsQ = Q.columnspace()
 
@@ -461,9 +430,8 @@ class RestrictionTools:
 
         B2 = sp.Matrix.hstack(*B2.columnspace())
 
-        ####################################################################
+        
         # Change of basis
-        ####################################################################
 
         T = B1.row_join(B2)
 
@@ -480,18 +448,15 @@ class RestrictionTools:
         )
 
 
-############################################################################
+
 # Decomposition Tree
-############################################################################
 
 class DecompositionTree:
     """
     Recursive decomposition tree construction.
     """
 
-    ########################################################################
     # Variance helper
-    ########################################################################
     
     @staticmethod
     def variance_of_entry(entry, base_var):
@@ -525,9 +490,8 @@ class DecompositionTree:
             / len(variances)
         )
 
-    ########################################################################
+
     # print tree
-    ########################################################################
 
     @staticmethod
     def print_tree(node, indent=0):
@@ -563,9 +527,8 @@ class DecompositionTree:
                 indent+1
             )
 
-    ########################################################################
+
     # BFS decomposition
-    ########################################################################
 
     @staticmethod
     def decompose_bfs(
@@ -607,9 +570,7 @@ class DecompositionTree:
 
             root_dim = node["root_dim"]
 
-            ################################################################
             # Extract generators
-            ################################################################
 
             gens = (
                 GeneratorExtractor
@@ -619,18 +580,16 @@ class DecompositionTree:
             if gens == []:
                 continue
 
-            ################################################################
+
             # Compute commutant
-            ################################################################
 
             comm = (
                 CommutantAnalyzer
                 .commutant_basis(gens)
             )
 
-            ################################################################
+
             # Find projector
-            ################################################################
 
             P = (
                 CommutantAnalyzer
@@ -640,26 +599,23 @@ class DecompositionTree:
             if P is None:
                 continue
 
-            ################################################################
+
             # Restrict matrices
-            ################################################################
 
             A, B, T = (
                 RestrictionTools
                 .restrict_matrix(M, P)
             )
 
-            ################################################################
+
             # Dimensions
-            ################################################################
 
             kA = get_dim(A)
 
             kB = get_dim(B)
 
-            ################################################################
+
             # Variances
-            ################################################################
 
             varA = (
                 DecompositionTree
@@ -677,9 +633,8 @@ class DecompositionTree:
                 )
             )
 
-            ################################################################
+
             # Child nodes
-            ################################################################
 
             left = {
                 "matrix": A,
@@ -710,10 +665,8 @@ class DecompositionTree:
         return root
 
 
-############################################################################
-# Main Symbolic Decomposer (Fast Decomposer)
-############################################################################
 
+# Main Symbolic Decomposer (Fast Decomposer)
 class SymbolicDecomposer:
     """
     Main symbolic decomposition interface.
@@ -735,9 +688,8 @@ class SymbolicDecomposer:
 
         self.base_var = base_var
 
-    ########################################################################
+
     # Get symbolic decompositions
-    ########################################################################
 
     def get_symbolic_matrices(self):
 
@@ -746,9 +698,8 @@ class SymbolicDecomposer:
             .get_symbolic_matrices(self.M)
         )
 
-    ########################################################################
+
     # Build decomposition trees
-    ########################################################################
 
     def get_full_trees(
         self,
