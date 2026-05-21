@@ -30,7 +30,7 @@ Required Python packages:
 - `lattice-estimator` from [LWE Estimator](https://github.com/malb/lattice-estimator)
 
 - The Deep_Decomposer.ipynb requires sagemath
-# examples.py
+# Examples.py
 
 This file contains examples of multiplication functions written for several lattice-based constructions.
 
