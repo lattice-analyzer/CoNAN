@@ -1,40 +1,41 @@
 # CoNAN
 
-This repository contains the artifacts associated to the article and describe how to run
-our prototype of the structure-aware lattice estimator.
+This repository contains the artifacts associated with the article and describes how to run
+our prototype structure-aware lattice estimator.
 
-# Short Descriptions of files
+# Short Descriptions of Files
 
-The repository contains the following files/Modules:
-- `examples.py`: contains multiplication functions for many examples of algebraic rings.
-- `compiler.py`: Compiles the multiplication rules for a specific construction and construct the lattice.
-- `fast-decomposer.py`: Symbolic block decomposition and fast heuristic homomorphism search.
-- `deep_decomposer.py`: The primary decomposer of the algebra and perform extensive and slower search.
-- `LWE_estimator_vs_CoNAN.ipynb`: Contains the security estimate for the schemes presented in the paper according to CoNAN
-vs. the lattice estimator from [LWE Estimator](https://github.com/malb/lattice-estimator).
+The repository contains the following files/modules:
 
+- `examples.py`: Contains multiplication functions for many examples of algebraic rings.
+- `compiler.py`: Compiles the multiplication rules for a specific construction and constructs the lattice.
+- `fast_decomposer.py`: Symbolic block decomposition and fast heuristic homomorphism search.
+- `Deep_Decomposer.ipynb`: The primary decomposer of the algebra and performs a more extensive but slower search.
+- `security_estimator.py`: Used to estimate the concrete blocksize (`beta`) for each found homomorphism (mainly used by the fast decomposer).
+- `LWE_estimator_vs_CoNAN.ipynb`: Contains the security estimates for the schemes presented in the paper according to CoNAN
+  vs. the lattice estimator from [LWE Estimator](https://github.com/malb/lattice-estimator).
 
 # Installation
 
 ```bash
-git clone <repository>
+git clone https://github.com/lattice-analyzer/CoNAN.git
 cd CoNAN
 ```
 
 # Requirements
-- python 3.10 or later
 
-- `sympy`
-- `numpy`
-- `sage`
-- `lattice-estimator from `[LWE Estimator](https://github.com/malb/lattice-estimator)
+- Python 3.10 or later
 
+Required Python packages:
+- `lattice-estimator` from [LWE Estimator](https://github.com/malb/lattice-estimator)
 
+- The Deep_Decomposer.ipynb requires sagemath
+# examples.py
 
-# Example.py
-This file contains examples of the multiplication functions written for some lattice-based constructions.
+This file contains examples of multiplication functions written for several lattice-based constructions.
 
 ---
+
 ## Example: NTRU Multiplication
 
 ```python
@@ -89,6 +90,7 @@ def mul_2RLWE(f, g, h, N1, N2):
                     )
 ```
 
+---
 
 ## Multiplication Function Format
 
@@ -106,16 +108,9 @@ where:
 
 ---
 
-# Compiler.py
+# Compiler
 
-The compiler extracts algebra structure directly from multiplication routines written in a restricted bilinear form.
-
-The compiler supports:
-
----
-
-The compiler parses the multiplication rule symbolically and reconstructs the full algebra structure tensor.
-
+The compiler extracts the algebraic structure directly from the multiplication rules.
 
 ---
 
@@ -135,7 +130,7 @@ H = compiler.construct_symbolic_matrix(
 )
 ```
 
-The output is the symbolic matrix representation of polynomials from the ring `Z[x]/(x^n - 1)`
+The output is the symbolic matrix representation corresponding to polynomials from the ring `Z[x]/(x^n - 1)`.
 
 ---
 
@@ -154,24 +149,35 @@ This returns the basis matrices of the left matrix representation.
 
 ---
 
-## Matrix representation
+## Matrix Representation
 
 | Type | Description                                  |
-|---|----------------------------------------------|
+|------|----------------------------------------------|
 | `LL` | Left matrix representation                   |
-| `LR` | Transpose of the left matrix representaiton  |
+| `LR` | Transpose of the left matrix representation  |
 | `RL` | Transpose of the right matrix representation |
 | `RR` | Right matrix representation                  |
 
 ---
-`LL` multiplication and `RR` multiplication matters for noncommutative algebra.
-`LR` and `RL` are used to compute the commutant in more efficient way.
+
+`LL` and `RR` multiplication matter for noncommutative algebras.
+`LR` and `RL` are used to compute the commutant more efficiently.
 
 ---
+
 # Fast Decomposer
 
-The symbolic decomposer searches for block decompositions directly from the symbolic block
-form of the matrix representation. It is fast and can run upto higher dimensions
+The symbolic decomposer searches for block patterns in the symbolic matrix and performs decomposition on the block matrix rather than the input matrix.
+
+It is fast and can run up to higher dimensions.
+
+---
+
+# Security Estimator
+
+Based on the discovered dimension-reduction homomorphisms, the security estimator evaluates the blocksize required to recover
+the private key or message through the different attack paths and returns the best global decomposition (including over `Q[i]`)
+together with the best integer homomorphism defining the concrete security.
 
 ---
 
@@ -180,11 +186,12 @@ form of the matrix representation. It is fast and can run upto higher dimensions
 ```python
 import compiler
 import fast_decomposer as fastdec
+
 ################## NTRU composite #######################
-n = 16
+
+n = 512
 q = 7681
 base_var = 4/3.
-
 
 ############################################################################
 # Initialize estimator
@@ -201,7 +208,8 @@ estimator = SecurityEstimator(
     filename="examples.py"
 )
 
-print("Checking dimension reduction homomorphisms, may take few minutes!")
+print("Checking dimension-reduction homomorphisms, this may take a few minutes!")
+
 ############################################################################
 # Run estimation
 ############################################################################
@@ -215,8 +223,7 @@ result = estimator.estimate_security(
 ############################################################################
 
 print(result)
-print("security according to CoNAN: ", result['concrete_beta']*0.292)
-
+print("security according to CoNAN: ", result['concrete_beta'] * 0.292)
 ```
 
 ---
@@ -247,116 +254,48 @@ print("security according to CoNAN: ", result['concrete_beta']*0.292)
 [1/2, -1/2]]), Matrix([
 [1,  1],
 [1, -1]])), 'transform_examples': None}], (256, 2.9768, 'integer', 'solve', {'matrix': Matrix([[H0 + H1]])}), (256, 2.9768, 'integer', 'solve', {'matrix': Matrix([[H0 - H1]])})], 'beta': 187, 'complex': False, 'critical_node': 1, 'tree_index': 0}, 'concrete_beta': 187}
-security according to CoNAN:  54.604
+
+security according to CoNAN: 54.604
 ```
 
-The output example gives the best found homomorphism over complex and integer and estimate the 
-concrete security according to the best found homomorphism as per estimated for integer entries lattices
-by calling the lattice estimator of [LWE Estimator](https://github.com/malb/lattice-estimator) for the reduced dimension lattice.
+The previous output gives the best found homomorphisms over the complex and integer settings and estimates the concrete security
+according to the best found homomorphism using the security estimates for integer-entry lattices by calling the lattice estimator
+from [LWE Estimator](https://github.com/malb/lattice-estimator) on the reduced-dimension lattice.
 
-The output contains the transformer to get the homomorphisms and lift back the solution.
+The output contains the transformations required to obtain the homomorphisms and lift back the solution.
+
+The previous example corresponds to Gentry's attack and shows that the security of composite NTRU
+is only about 54 bits (Core-SVP) compared to the 118 bits predicted by the standard lattice estimator.
+
+The example takes around 2 minutes on a standard desktop.
 
 ---
 
 # Deep Decomposer
 
-The fast decomposer operates directly on original symbolic matrix representation without
-looking for block patterns. 
+The deep decomposer operates directly on the original symbolic matrix representation without
+looking for block patterns.
 
-It is slower than the fast decomposer but look for more possible homomorphism.
+It is slower than the fast decomposer but extensively searches for homomorphisms.
 
-Our current implementation is slow and can be further optimized/
+The code of the Deep Decomposer in not fully optimized and Our current implementation can run up to `n=128`
+and we have implemented is sage to avoid the overhead o  `Sympy`
 
 ---
 
 # Deep Decomposer Example
 
-```python
-import compiler
-import fast_decomposer as fastdec
-
-############################################################################
-# Parameters
-############################################################################
-
-n = 8
-q = 1024
-base_var = 2/3.
-
-############################################################################
-# Construct symbolic matrix
-############################################################################
-
-H = compiler.construct_symbolic_matrix(
-    filename="examples.py",
-    funcname="mul_NTRU",
-    dimension=n,
-    mul_type='LL',
-    variable='h'
-)
-
-############################################################################
-# Initialize symbolic decomposer
-############################################################################
-
-decomposer = fastdec.SymbolicDecomposer(
-    symbolic_matrix=H,
-    n=n,
-    q=q,
-    base_var=base_var
-)
-
-############################################################################
-# Search decompositions
-############################################################################
-
-decomposer.get_full_trees(
-    verbose=True
-)
-```
-
----
-
-# Fast Decomposer Output
-
-The fast decomposer prints:
-
-- detected symbolic block structures,
-- candidate homomorphisms,
-- transformed symbolic lattices,
-- estimated attack costs.
-
-Example:
-
-```text
-Partition:
-[0, 0, 1]
-
-Full transformed symbolic lattice:
-
-[h0+h1+h2+h3            0              0             0]
-[0            h0-h1+h2-h3              0             0]
-[0                       0         h0-h2      -h1+h3]
-[0                       0         h1-h3       h0-h2]
-```
-
-
-
-
-
-
-
+You can check examples in Primary-Decomposer.ipynb
 
 # Project Structure
 
 ```text
 CoNAN/
-│
+├── examples.py
 ├── compiler.py
 ├── fast_decomposer.py
-├── deep_decomposer.py
-├── examples.py
+├── security_estimator.py
+├── Deep-Decomposer.ipynb
 ├── LWE_estimator_vs_CoNAN.ipynb
 └── README.md
 ```
-
