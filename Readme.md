@@ -1,19 +1,20 @@
 # CoNAN
 
-This repository contains the artifacts associated with the article and describes how to run
+This repository contains the artifacts associated with the paper and describes how to run
 our prototype structure-aware lattice estimator.
 
-# Short Descriptions of Files
+# Short Description of Files
 
 The repository contains the following files/modules:
 
-- `examples.py`: Contains multiplication functions for many examples of algebraic rings.
-- `compiler.py`: Compiles the multiplication rules for a specific construction and constructs the lattice.
-- `fast_decomposer.py`: Symbolic block decomposition and fast heuristic homomorphism search.
-- `Deep_Decomposer.ipynb`: The primary decomposer of the algebra and performs a more extensive but slower search.
-- `security_estimator.py`: Used to estimate the concrete blocksize (`beta`) for each found homomorphism (mainly used by the fast decomposer).
+- `examples.py`: Contains multiplication functions for several examples of algebraic rings.
+- `compiler.py`: Compiles the multiplication rules for a specific construction and constructs the corresponding lattice.
+- `fast_decomposer.py`: Performs symbolic block decomposition and fast heuristic homomorphism search.
+- `security_estimator.py`: Estimates the concrete blocksize (`beta`) for each discovered homomorphism (mainly used by the fast decomposer).
 - `LWE_estimator_vs_CoNAN.ipynb`: Contains the security estimates for the schemes presented in the paper according to CoNAN
-  vs. the lattice estimator from [LWE Estimator](https://github.com/malb/lattice-estimator).
+  versus the lattice estimator from [LWE Estimator](https://github.com/malb/lattice-estimator).
+- `Primary_Decomposer_nonopt.sage`: The primary decomposer of the algebra performing a more extensive but slower search (non-optimized, typically practical up to `n=128`).
+- `Primary_Decomposer_opt.sage`: A more optimized version of the primary decomposer capable of handling larger dimensions.
 
 # Installation
 
@@ -25,12 +26,20 @@ cd CoNAN
 # Requirements
 
 - Python 3.10 or later
+- SageMath (required to run the Primary Decomposer)
 
 Required Python packages:
 - `lattice-estimator` from [LWE Estimator](https://github.com/malb/lattice-estimator)
 
+<<<<<<< HEAD
 - The Deep_Decomposer.ipynb requires sagemath
 # Examples.py
+=======
+Additional note:
+- `Deep_Decomposer.ipynb` also requires SageMath.
+
+# examples.py
+>>>>>>> 4be7810 (adding the non_optimized decomposer)
 
 This file contains examples of multiplication functions written for several lattice-based constructions.
 
@@ -114,7 +123,7 @@ The compiler extracts the algebraic structure directly from the multiplication r
 
 ---
 
-## Constructing Symbolic Matrix Representation
+## Constructing Symbolic Matrix Representations
 
 ```python
 import compiler
@@ -130,7 +139,7 @@ H = compiler.construct_symbolic_matrix(
 )
 ```
 
-The output is the symbolic matrix representation corresponding to polynomials from the ring `Z[x]/(x^n - 1)`.
+The output is the symbolic matrix representation corresponding to the ring `Z[x]/(x^n - 1)`.
 
 ---
 
@@ -145,11 +154,11 @@ L = compiler.construct_lattice(
 )
 ```
 
-This returns the basis matrices of the left matrix representation.
+This returns the basis matrices corresponding to the left matrix representation.
 
 ---
 
-## Matrix Representation
+## Matrix Representation Types
 
 | Type | Description                                  |
 |------|----------------------------------------------|
@@ -160,16 +169,16 @@ This returns the basis matrices of the left matrix representation.
 
 ---
 
-`LL` and `RR` multiplication matter for noncommutative algebras.
-`LR` and `RL` are used to compute the commutant more efficiently.
+`LL` and `RR` representations are relevant for noncommutative algebras.
+`LR` and `RL` are mainly used to compute the commutant more efficiently.
 
 ---
 
 # Fast Decomposer
 
-The symbolic decomposer searches for block patterns in the symbolic matrix and performs decomposition on the block matrix rather than the input matrix.
+The symbolic decomposer searches for block patterns in the symbolic matrix and performs decomposition on the resulting block matrix rather than directly on the original matrix.
 
-It is fast and can run up to higher dimensions.
+It is significantly faster and can scale to higher dimensions.
 
 ---
 
@@ -258,34 +267,62 @@ print("security according to CoNAN: ", result['concrete_beta'] * 0.292)
 security according to CoNAN: 54.604
 ```
 
-The previous output gives the best found homomorphisms over the complex and integer settings and estimates the concrete security
-according to the best found homomorphism using the security estimates for integer-entry lattices by calling the lattice estimator
+The previous output gives the best discovered homomorphisms over both the complex and integer settings and estimates the concrete security
+according to the best discovered homomorphism by calling the lattice estimator
 from [LWE Estimator](https://github.com/malb/lattice-estimator) on the reduced-dimension lattice.
 
-The output contains the transformations required to obtain the homomorphisms and lift back the solution.
+The output also contains the transformations required to obtain the homomorphisms and lift back the solution.
 
 The previous example corresponds to Gentry's attack and shows that the security of composite NTRU
-is only about 54 bits (Core-SVP) compared to the 118 bits predicted by the standard lattice estimator.
+is only about 54 bits (Core-SVP), compared to the 118 bits predicted by the standard lattice estimator.
 
-The example takes around 2 minutes on a standard desktop.
-
----
-
-# Deep Decomposer
-
-The deep decomposer operates directly on the original symbolic matrix representation without
-looking for block patterns.
-
-It is slower than the fast decomposer but extensively searches for homomorphisms.
-
-The code of the Deep Decomposer in not fully optimized and Our current implementation can run up to `n=128`
-and we have implemented is sage to avoid the overhead o  `Sympy`
+The example takes approximately 2 minutes on a standard desktop.
 
 ---
 
-# Deep Decomposer Example
+# Primary Decomposer
 
-You can check examples in Primary-Decomposer.ipynb
+The primary decomposer operates directly on the original symbolic matrix representation without
+searching for block patterns.
+
+It is slower than the fast decomposer but performs a more extensive search for homomorphisms.
+
+We implemented it in SageMath to avoid the overhead of the `SymPy` library.
+
+We provide two versions of the decomposer:
+
+- `Primary_Decomposer_nonopt.sage`: Easier to understand and closer to the underlying algorithmic logic, but not fully optimized.
+- `Primary_Decomposer_opt.sage`: More optimized and capable of handling larger dimensions.
+
+---
+
+# Primary Decomposer Example
+
+```sage
+sage: load("Primary_Decomposer_nonopt.sage")
+sage: hom = homomorphism('examples.py', 'mul_NTRU', [64], 'LL', False)
+```
+
+or to run multiple workers in parallel:
+
+```sage
+sage: hom = homomorphism_parallel(
+       filename    = 'examples.py',
+       funcname    = 'mul_NTRU',
+       args        = [128],       # add more parameters if mul_NTRU requires them
+       mul_type    = 'LL',
+       do_print    = False,
+       num_workers = 8,
+)
+```
+
+You can inspect the discovered homomorphisms by printing:
+
+```sage
+print(hom[i])
+```
+
+`Primary_Decomposer_opt.sage` can be used in a similar way while targeting larger dimensions.
 
 # Project Structure
 
@@ -295,7 +332,8 @@ CoNAN/
 ├── compiler.py
 ├── fast_decomposer.py
 ├── security_estimator.py
-├── Deep-Decomposer.ipynb
+├── Primary_Decomposer_nonopt.sage
+├── Primary_Decomposer_opt.sage
 ├── LWE_estimator_vs_CoNAN.ipynb
 └── README.md
 ```
