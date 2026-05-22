@@ -31,7 +31,7 @@ cd CoNAN
 Required Python packages:
 - `lattice-estimator` from [LWE Estimator](https://github.com/malb/lattice-estimator)
 
-<<<<<<< HEAD
+
 - The Deep_Decomposer.ipynb requires sagemath
 # Examples.py
 =======
@@ -39,7 +39,7 @@ Additional note:
 - `Deep_Decomposer.ipynb` also requires SageMath.
 
 # examples.py
->>>>>>> 4be7810 (adding the non_optimized decomposer)
+
 
 This file contains examples of multiplication functions written for several lattice-based constructions.
 
