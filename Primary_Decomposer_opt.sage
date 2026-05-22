@@ -47,10 +47,7 @@ def extract_operator(filename, funcname, args):
         newlines.append(newline)
     modified_code = '\n'.join(newlines)
 
-    # Inject 'n' and any other args into the exec namespace so that
-    # the generated function can reference them as global variables.
-    # Without this, mul_NTRU_modified raises NameError: name 'n' is not defined
-    # because the compiled code sees 'n' as a free variable.
+
     n = args[0]
     namespace = {'n': n, 'args': args}
     exec(compile(f'{source}\n\n{modified_code}', "<generated>", "exec"), namespace)
@@ -647,7 +644,7 @@ def homomorphism(filename, funcname, args, mul_type, do_print,
    
     unity_list = list(unity[0]) if unity is not None else [0] * n
 
-    # Pre-deduplicate by charpoly BEFORE spawning workers.
+
  
     print(f"[CoNAN] Pre-filtering {t} elements by charpoly ...")
     import numpy as np
