@@ -190,6 +190,7 @@ together with the best integer homomorphism defining the concrete security.
 ```python
 import compiler
 import fast_decomposer as fastdec
+from security_estimator import SecurityEstimator
 
 ################## NTRU composite #######################
 
@@ -314,7 +315,7 @@ sage: hom = homomorphism_parallel(
 You can inspect the discovered homomorphisms by printing:
 
 ```sage
-print(hom[i])
+print(hom[i])    #### i=0,1,....number_of_homomorphisms
 ```
 
 `Primary_Decomposer_opt.sage` can be used in a similar way while targeting larger dimensions and will compute blocksize esimation

@@ -5,7 +5,7 @@ import compiler
 from compiler import AlgebraCompiler
 
 import fast_decomposer as fastdec
-import deep_decomposer as deepdec
+#import deep_decomposer as deepdec
 
 from LWE_estimator import estimator
 from math import sqrt
