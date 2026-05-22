@@ -15,7 +15,7 @@ The repository contains the following files/modules:
   versus the lattice estimator from [LWE Estimator](https://github.com/malb/lattice-estimator).
 - `Primary_Decomposer_nonopt.sage`: The primary decomposer of the algebra performing a more extensive but slower search (non-optimized, typically practical up to `n=128`).
 - `Primary_Decomposer_opt.sage`: A more optimized version of the primary decomposer capable of handling larger dimensions.
-
+- `CoNAN_TimeComplexity.ipynb`: A discussion on the time complexity of CoNAN algorithm.
 # Installation
 
 ```bash
