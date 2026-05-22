@@ -309,7 +309,7 @@ or to run multiple workers in parallel:
 sage: hom = homomorphism_parallel(
        filename    = 'examples.py',
        funcname    = 'mul_NTRU',
-       args        = [128],       # add more parameters if mul_NTRU requires them
+       args        = [128],       # add more parameters if your function require more than (f, g, h, n) as parameters
        mul_type    = 'LL',
        do_print    = False,
        num_workers = 8,
@@ -322,8 +322,18 @@ You can inspect the discovered homomorphisms by printing:
 print(hom[i])
 ```
 
-`Primary_Decomposer_opt.sage` can be used in a similar way while targeting larger dimensions.
+`Primary_Decomposer_opt.sage` can be used in a similar way while targeting larger dimensions and will compute blocksize esimation
+per founded homomorphisms.
 
+For instance,
+```sage
+sage: load("Primary_Decomposer_opt.sage")
+sage: homs=homomorphism("examples.py", "mul_BQTRU",[256], mul_type='LL', do_print=False,
+....:         num_workers=1, q=512, base_var=2/3, lattice='NTRU',
+....:         task_timeout=300, field='QQ')
+
+```
+takes a few minutes on a standard desktop and estimate betas for found homomorphisms.
 # Project Structure
 
 ```text
@@ -335,5 +345,6 @@ CoNAN/
 ├── Primary_Decomposer_nonopt.sage
 ├── Primary_Decomposer_opt.sage
 ├── LWE_estimator_vs_CoNAN.ipynb
+├── CoNAN_TimeComplexity.ipynb
 └── README.md
 ```
