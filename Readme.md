@@ -34,8 +34,8 @@ Required Python packages:
 
 - The Deep_Decomposer.ipynb requires sagemath
 # Examples.py
-=======
-Additional note:
+
+
 - `Deep_Decomposer.ipynb` also requires SageMath.
 
 # examples.py
